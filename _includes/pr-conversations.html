@@ -18,8 +18,8 @@
   (function () {
     const api = "{{ site.api_base }}";
     const owner = "{{ site.repo_owner }}";
-    const repo  = "{{ site.repo_name }}";
-    const rootEl   = document.getElementById("pr-root");
+    const repo = "{{ site.repo_name }}";
+    const rootEl = document.getElementById("pr-root");
     const prNumber = JSON.parse(rootEl?.dataset.pr || "null"); // prNumber is number or null
 
     // Elements
@@ -33,7 +33,11 @@
     const textarea = document.getElementById("pr-comment");
 
     // Wire handlers FIRST so an earlier error doesn't block clicks
-    btnSignIn.onclick = () => { location.href = `${api}/api/auth/login`; };
+    btnSignIn.onclick = () => {
+      const returnTo = encodeURIComponent(location.href);
+      location.href = `${api}/api/auth/login?redirect=${returnTo}`;
+    };
+
     btnSignOut.onclick = async () => {
       await fetch(`${api}/api/auth/logout`, { method: "POST", credentials: "include" });
       location.reload();
@@ -55,7 +59,7 @@
       await render(); // refresh comments
     };
 
-    function escapeHtml(s){return (s||"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]))}
+    function escapeHtml(s) { return (s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])) }
 
     async function safeJson(res) {
       try { return await res.json(); } catch { return null; }
@@ -95,7 +99,7 @@
       issueComments.forEach(c => {
         blocks.push(
           `<div class="thread">
-            <img src="${c.user?.avatar_url||''}" width="20" height="20" style="border-radius:50%;vertical-align:middle">
+            <img src="${c.user?.avatar_url || ''}" width="20" height="20" style="border-radius:50%;vertical-align:middle">
             <strong>${escapeHtml(c.user?.login)}</strong>
             <span style="color:#777">commented</span>
             <div style="margin-top:6px;">${escapeHtml(c.body)}</div>
@@ -106,7 +110,7 @@
       reviewComments.forEach(c => {
         blocks.push(
           `<div class="thread">
-            <img src="${c.user?.avatar_url||''}" width="20" height="20" style="border-radius:50%;vertical-align:middle">
+            <img src="${c.user?.avatar_url || ''}" width="20" height="20" style="border-radius:50%;vertical-align:middle">
             <strong>${escapeHtml(c.user?.login)}</strong>
             <span style="color:#777">on</span> <code>${escapeHtml(c.path)}</code>
             <div style="margin-top:6px;">${escapeHtml(c.body)}</div>
@@ -125,7 +129,20 @@
 
 
 <style>
-  .card{border:1px solid var(--border,#e5e7eb); border-radius:12px; padding:12px; background:#fff}
-  .thread{border-top:1px dashed #e5e7eb; padding-top:10px; margin-top:10px}
-  #pr-new textarea{font:inherit}
+  .card {
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 12px;
+    padding: 12px;
+    background: #fff
+  }
+
+  .thread {
+    border-top: 1px dashed #e5e7eb;
+    padding-top: 10px;
+    margin-top: 10px
+  }
+
+  #pr-new textarea {
+    font: inherit
+  }
 </style>
