@@ -200,11 +200,28 @@ jobs:
           git commit -m "chore(spec): post-merge bump/stage/status for #${PR_NUMBER}" || echo "Nothing to commit"
           git push
 
-          # create annotated tags for each updated space
+          # create annotated tags for each updated space (slugify components)
           if [ -f /tmp/tags.txt ]; then
+            slugify() {
+              printf '%s' "$1" \
+                | tr '[:upper:]' '[:lower:]' \
+                | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//'
+            }
+
             while IFS='|' read -r family major newv st; do
-              tag="spec/${family}/${major}@${newv}-${st}"
+              [ -n "$family" ] || continue
+              [ -n "$major" ]  || continue
+              sfam=$(slugify "$family")
+              smaj=$(slugify "$major")
+              tag="spec/${sfam}/${smaj}@${newv}-${st}"
+
+              if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+                echo "Tag already exists: $tag (skipping)"
+                continue
+              fi
+
               git tag -a "$tag" -m "Spec ${family}/${major} ${newv} (${st}) after #${PR_NUMBER}: ${PR_TITLE}"
               git push origin "$tag"
+              echo "Pushed tag $tag"
             done < /tmp/tags.txt
           fi
