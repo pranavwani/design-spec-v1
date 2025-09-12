@@ -7,7 +7,7 @@ Compute the space root and find the space index page.
 Works for both /specs/... and /drafts/... because we use the page’s collection.
 {%- endcomment -%}
 {%- assign root = page.url | replace: '/index.html','/' -%}
-{%- assign col  = page.collection | default: 'specs' -%}
+{%- assign col = page.collection | default: 'specs' -%}
 {%- assign coll = site[col] | default: site.specs -%}
 {%- assign space_index = coll | where: "url", root | first -%}
 {%- assign meta = space_index | default: page -%}
@@ -17,37 +17,39 @@ Works for both /specs/... and /drafts/... because we use the page’s collection
   <h1 class="spec-heading">{{ page.title }}</h1>
   <div class="spec-header-right">
     {%- if meta.epic -%}
-      {%- assign _epic = meta.epic | strip -%}
-      {%- if site.jira and site.jira.base_url -%}
-        <a class="pill pill--muted" href="{{ site.jira.base_url | append: '/' | append: _epic }}" target="_blank" rel="noopener">
-          Epic {{ _epic }}
-        </a>
-      {%- else -%}
-        <span class="pill pill--muted">Epic {{ _epic }}</span>
-      {%- endif -%}
+    {%- assign _epic = meta.epic | strip -%}
+    {%- if site.jira and site.jira.base_url -%}
+    <a class="pill pill--muted" href="{{ site.jira.base_url | append: '/' | append: _epic }}" target="_blank"
+      rel="noopener">
+      Epic {{ _epic }}
+    </a>
+    {%- else -%}
+    <span class="pill pill--muted">Epic {{ _epic }}</span>
+    {%- endif -%}
     {%- endif -%}
     {%- if meta.status -%}
-      <span class="pill pill--{{ meta.status | downcase }}">{{ meta.status | capitalize }}</span>
+    <span class="pill pill--{{ meta.status | downcase }}">{{ meta.status | capitalize }}</span>
     {%- endif -%}
     {%- if meta.updated_at -%}
-      <span class="pill pill--muted">Updated {{ meta.updated_at }}</span>
+    <span class="pill pill--muted">Updated {{ meta.updated_at }}</span>
     {%- endif -%}
     {%- if meta.owner -%}
-      {%- assign _owner = meta.owner | strip -%}
-      {%- if _owner | slice: 0, 1 == '@' -%}
-        {%- assign _handle = _owner | remove: '@' -%}
-        <a class="pill pill--muted" href="https://github.com/{{ _handle | uri_escape }}" target="_blank" rel="noopener" title="Open {{ _owner }} on GitHub">
-          Owner {{ _owner }}
-        </a>
-      {%- else -%}
-        <span class="pill">Owner {{ _owner }}</span>
-      {%- endif -%}
+    {%- assign _owner = meta.owner | strip -%}
+    {%- if _owner | slice: 0, 1 == '@' -%}
+    {%- assign _handle = _owner | remove: '@' -%}
+    <a class="pill pill--muted" href="https://github.com/{{ _handle | uri_escape }}" target="_blank" rel="noopener"
+      title="Open {{ _owner }} on GitHub">
+      Owner {{ _owner }}
+    </a>
+    {%- else -%}
+    <span class="pill">Owner {{ _owner }}</span>
+    {%- endif -%}
     {%- endif -%}
     {%- if meta.team -%}
-      <span class="pill">Team {{ meta.team }}</span>
+    <span class="pill">Team {{ meta.team }}</span>
     {%- endif -%}
     {%- if meta.created_at -%}
-      <span class="pill pill--muted">Created {{ meta.created_at }}</span>
+    <span class="pill pill--muted">Created {{ meta.created_at }}</span>
     {%- endif -%}
   </div>
 </header>
@@ -64,47 +66,47 @@ and build a normalized list with label/order (front-matter wins; otherwise map/f
 {%- assign order_map = "overview:0|hld:10|lld:20|data-model:25|api:30|ux:40|rollout-ops:50|qa-test:60" | split:"|" -%}
 
 {%- for d in docs -%}
-  {%- assign depth = d.path | remove_first: space_dir | split:'/' | size -%}
-  {%- if depth > 1 -%}{% continue %}{%- endif -%}
+{%- assign depth = d.path | remove_first: space_dir | split:'/' | size -%}
+{%- if depth > 1 -%}{% continue %}{%- endif -%}
 
-  {%- assign href = d.url | replace: '/index.html','/' -%}
-  {%- assign rel = d.path | remove_first: space_dir -%}
-  {%- assign slug = rel | replace: 'index.md','overview' | replace: '.md','' | downcase -%}
+{%- assign href = d.url | replace: '/index.html','/' -%}
+{%- assign rel = d.path | remove_first: space_dir -%}
+{%- assign slug = rel | replace: 'index.md','overview' | replace: '.md','' | downcase -%}
 
-  {%- assign label = d.nav_title | default: d.title -%}
-  {%- if label == nil or label == "" -%}
-    {%- case slug -%}
-      {%- when 'overview' -%}{%- assign label = 'Overview' -%}
-      {%- when 'hld' -%}{%- assign label = 'High-Level Design' -%}
-      {%- when 'lld' -%}{%- assign label = 'Low-Level Design' -%}
-      {%- when 'data-model' -%}{%- assign label = 'Data Model' -%}
-      {%- when 'api' -%}{%- assign label = 'API' -%}
-      {%- when 'ux' -%}{%- assign label = 'UX' -%}
-      {%- when 'rollout-ops' -%}{%- assign label = 'Rollout & Ops' -%}
-      {%- when 'qa-test' -%}{%- assign label = 'QA / Test Plan' -%}
-      {%- else -%}
-        {%- assign label = slug | replace:'-',' ' | capitalize -%}
-    {%- endcase -%}
-  {%- endif -%}
+{%- assign label = d.nav_title | default: d.title -%}
+{%- if label == nil or label == "" -%}
+{%- case slug -%}
+{%- when 'overview' -%}{%- assign label = 'Overview' -%}
+{%- when 'hld' -%}{%- assign label = 'High-Level Design' -%}
+{%- when 'lld' -%}{%- assign label = 'Low-Level Design' -%}
+{%- when 'data-model' -%}{%- assign label = 'Data Model' -%}
+{%- when 'api' -%}{%- assign label = 'API' -%}
+{%- when 'ux' -%}{%- assign label = 'UX' -%}
+{%- when 'rollout-ops' -%}{%- assign label = 'Rollout & Ops' -%}
+{%- when 'qa-test' -%}{%- assign label = 'QA / Test Plan' -%}
+{%- else -%}
+{%- assign label = slug | replace:'-',' ' | capitalize -%}
+{%- endcase -%}
+{%- endif -%}
 
-  {%- assign order = d.nav_order -%}
-  {%- if order == nil or order == "" -%}
-    {%- assign mapped = 999 -%}
-    {%- for p in order_map -%}
-      {%- assign k = p | split:':' | first -%}
-      {%- assign v = p | split:':' | last  -%}
-      {%- if slug == k -%}{%- assign mapped = v -%}{%- endif -%}
-    {%- endfor -%}
-    {%- assign order = mapped -%}
-  {%- endif -%}
+{%- assign order = d.nav_order -%}
+{%- if order == nil or order == "" -%}
+{%- assign mapped = 999 -%}
+{%- for p in order_map -%}
+{%- assign k = p | split:':' | first -%}
+{%- assign v = p | split:':' | last -%}
+{%- if slug == k -%}{%- assign mapped = v -%}{%- endif -%}
+{%- endfor -%}
+{%- assign order = mapped -%}
+{%- endif -%}
 
-  {%- assign active = page.url == d.url -%}
-  {%- assign item = '{"href":"__H__","label":"__L__","order":__O__,"active":__A__}' 
-      | replace:'__H__', href 
-      | replace:'__L__', label 
-      | replace:'__O__', order 
-      | replace:'__A__', active -%}
-  {%- assign normalized = normalized | push: item -%}
+{%- assign active = page.url == d.url -%}
+{%- assign item = '{"href":"__H__","label":"__L__","order":__O__,"active":__A__}'
+| replace:'__H__', href
+| replace:'__L__', label
+| replace:'__O__', order
+| replace:'__A__', active -%}
+{%- assign normalized = normalized | push: item -%}
 {%- endfor -%}
 
 {%- assign sorted = normalized | sort: 'order' -%}
@@ -114,19 +116,18 @@ and build a normalized list with label/order (front-matter wins; otherwise map/f
     <nav class="sidebar-nav">
       <ul class="side-links">
         {%- for d in docs -%}
-          {%- assign rel = d.path | remove_first: space_dir -%}
-          {%- assign depth = rel | split:'/' | size -%}
-          {%- if depth > 1 -%}{% continue %}{%- endif -%}
+        {%- assign rel = d.path | remove_first: space_dir -%}
+        {%- assign depth = rel | split:'/' | size -%}
+        {%- if depth > 1 -%}{% continue %}{%- endif -%}
 
-          {%- assign href = d.url | replace: '/index.html','/' -%}
-          {%- assign is_active = page.url == d.url -%}
-          <li>
-            <a href="{{ href | relative_url }}"
-               class="{% if is_active %}active{% endif %}"
-               {% if is_active %}aria-current="page"{% endif %}>
-              {{ d.nav_title | default: d.title | default: 'Untitled' }}
-            </a>
-          </li>
+        {%- assign href = d.url | replace: '/index.html','/' -%}
+        {%- assign is_active = page.url == d.url -%}
+        <li>
+          <a href="{{ href | relative_url }}" class="{% if is_active %}active{% endif %}" {% if is_active
+            %}aria-current="page" {% endif %}>
+            {{ d.nav_title | default: d.title | default: 'Untitled' }}
+          </a>
+        </li>
         {%- endfor -%}
       </ul>
     </nav>
@@ -136,6 +137,18 @@ and build a normalized list with label/order (front-matter wins; otherwise map/f
     <article class="content-card">
       {{ content }}
     </article>
+
+    {%- comment -%}
+    PR conversations panel:
+    Use `meta` (the space index) so all child pages share the same PR thread.
+    This shows only when the PR number is present in front-matter.
+    {%- endcomment -%}
+    {%- if meta.pr -%}
+    <section class="content-card" aria-label="Pull request conversations">
+      <h2 style="margin-top:0">Pull request discussion</h2>
+      {%- include pr-conversations.html pr=meta.pr pr_url=meta.pr_url -%}
+    </section>
+    {%- endif -%}
   </main>
 </div>
 

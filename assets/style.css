@@ -326,3 +326,5 @@ a, .view-btn, .tab, .btn { transition: background .15s ease, color .15s ease, bo
   .toolbar{ flex-wrap:wrap; }
   .toggle.inline{ order:2; }  /* allows wrapping under tabs on small screens */
 }
+
+.content-card + .content-card { margin-top: 16px; }

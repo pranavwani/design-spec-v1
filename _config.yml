@@ -24,3 +24,9 @@ jira:
   base_url: https://hclsw-jiracentral.atlassian.net/browse
 
 repo_url: "https://github.com/pranavwani/design-spec-v1"
+
+# Config keys for PR Conversations module
+github_oauth_client_id: "Ov23licZG0fDmqjaq11H"     # from GitHub OAuth App
+api_base: "https://design-specs-api.vercel.app" # your serverless backend base URL
+repo_owner: "pranavwani"
+repo_name: "design-spec-v1"
