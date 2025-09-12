@@ -12,101 +12,117 @@
   <textarea id="pr-comment" placeholder="Add a general comment…" rows="3" style="width:100%"></textarea>
   <button id="pr-post">Post to PR</button>
 </div>
+<div id="pr-root" data-pr='{{ page.pr | default: nil | jsonify }}'></div>
 
 <script>
-  (function() {
+  (function () {
     const api = "{{ site.api_base }}";
     const owner = "{{ site.repo_owner }}";
     const repo  = "{{ site.repo_name }}";
-    const prNumber = "{{ include.pr | default: page.pr | jsonify }}";
-    
-    async function me() {
-      const r = await fetch(`${api}/api/github/me`, { credentials: "include" });
-      if (!r.ok) return null;
-      return await r.json();
-    }
+    const rootEl   = document.getElementById("pr-root");
+    const prNumber = JSON.parse(rootEl?.dataset.pr || "null"); // prNumber is number or null
 
-    function gotoLogin() {
-      // hit backend login route (sets state cookie and redirects to GitHub)
-      location.href = `${api}/api/auth/login`;
-    }
-    async function logout() {
+    // Elements
+    const btnSignIn = document.getElementById("sign-in");
+    const btnSignOut = document.getElementById("sign-out");
+    const who = document.getElementById("whoami");
+    const avatar = document.getElementById("me-avatar");
+    const nameEl = document.getElementById("me-name");
+    const threadsRoot = document.getElementById("pr-threads");
+    const postBtn = document.getElementById("pr-post");
+    const textarea = document.getElementById("pr-comment");
+
+    // Wire handlers FIRST so an earlier error doesn't block clicks
+    btnSignIn.onclick = () => { location.href = `${api}/api/auth/login`; };
+    btnSignOut.onclick = async () => {
       await fetch(`${api}/api/auth/logout`, { method: "POST", credentials: "include" });
       location.reload();
+    };
+    postBtn.onclick = async () => {
+      const text = textarea.value.trim();
+      if (!text) return;
+      const r = await fetch(`${api}/api/github/pr-comment`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner, repo, prNumber, text })
+      });
+      if (!r.ok) {
+        if (r.status === 401) { alert("Please sign in first."); return; }
+        alert("Failed to post comment."); return;
+      }
+      textarea.value = "";
+      await render(); // refresh comments
+    };
+
+    function escapeHtml(s){return (s||"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]))}
+
+    async function safeJson(res) {
+      try { return await res.json(); } catch { return null; }
     }
 
-    async function load() {
-      const user = await me();
-      const authDiv = document.getElementById("pr-auth");
-      const who = document.getElementById("whoami");
-      const si = document.getElementById("sign-in");
-      const so = document.getElementById("sign-out");
-
-      if (user) {
-        si.style.display = "none";
+    async function render() {
+      // 1) Who am I?
+      const meRes = await fetch(`${api}/api/github/me`, { credentials: "include" });
+      if (meRes.ok) {
+        const me = await meRes.json();
+        btnSignIn.style.display = "none";
         who.style.display = "";
-        document.getElementById("me-avatar").src = user.avatar_url;
-        document.getElementById("me-name").textContent = user.name || user.login;
+        avatar.src = me.avatar_url || "";
+        nameEl.textContent = me.name || me.login || "You";
       } else {
-        si.style.display = "";
+        // Not signed in → show sign-in only and stop here (no more API calls)
         who.style.display = "none";
+        btnSignIn.style.display = "";
+        threadsRoot.innerHTML = `<div class="thread" style="border:none;margin:0;padding:0;color:#777;">
+          Sign in to view and post PR comments.
+        </div>`;
+        return;
       }
 
-      // Load conversations
-      const [issueComments, reviewComments] = await Promise.all([
-        fetch(`${api}/api/github/pr-comments?owner=${owner}&repo=${repo}&pr=${prNumber}`, { credentials: "include" }).then(r => r.json()),
-        fetch(`${api}/api/github/pr-review-comments?owner=${owner}&repo=${repo}&pr=${prNumber}`, { credentials: "include" }).then(r => r.json()),
+      // 2) Load conversations (handle non-200s gracefully)
+      const [issueRes, reviewRes] = await Promise.all([
+        fetch(`${api}/api/github/pr-comments?owner=${owner}&repo=${repo}&pr=${prNumber}`, { credentials: "include" }),
+        fetch(`${api}/api/github/pr-review-comments?owner=${owner}&repo=${repo}&pr=${prNumber}`, { credentials: "include" })
       ]);
 
-      const root = document.getElementById("pr-threads");
-      root.innerHTML = "";
+      const issueComments = issueRes.ok ? (await safeJson(issueRes) || []) : [];
+      const reviewComments = reviewRes.ok ? (await safeJson(reviewRes) || []) : [];
 
-      function block(html) {
-        const d = document.createElement("div");
-        d.className = "thread";
-        d.innerHTML = html;
-        root.appendChild(d);
-      }
+      threadsRoot.innerHTML = "";
+      const blocks = [];
 
       issueComments.forEach(c => {
-        block(`<div class="cm">
-          <img src="${c.user.avatar_url}" width="20" height="20" style="border-radius:50%;vertical-align:middle"> 
-          <strong>${c.user.login}</strong> <span style="color:#777">commented</span>
-          <div style="margin-top:6px;">${escapeHtml(c.body)}</div>
-        </div>`);
+        blocks.push(
+          `<div class="thread">
+            <img src="${c.user?.avatar_url||''}" width="20" height="20" style="border-radius:50%;vertical-align:middle">
+            <strong>${escapeHtml(c.user?.login)}</strong>
+            <span style="color:#777">commented</span>
+            <div style="margin-top:6px;">${escapeHtml(c.body)}</div>
+          </div>`
+        );
       });
 
       reviewComments.forEach(c => {
-        block(`<div class="cm">
-          <img src="${c.user.avatar_url}" width="20" height="20" style="border-radius:50%;vertical-align:middle"> 
-          <strong>${c.user.login}</strong> on <code>${c.path}</code> <span style="color:#777">at line ${c.line || c.original_line}</span>
-          <div style="margin-top:6px;">${escapeHtml(c.body)}</div>
-        </div>`);
+        blocks.push(
+          `<div class="thread">
+            <img src="${c.user?.avatar_url||''}" width="20" height="20" style="border-radius:50%;vertical-align:middle">
+            <strong>${escapeHtml(c.user?.login)}</strong>
+            <span style="color:#777">on</span> <code>${escapeHtml(c.path)}</code>
+            <div style="margin-top:6px;">${escapeHtml(c.body)}</div>
+          </div>`
+        );
       });
 
-      document.getElementById("pr-post").onclick = async () => {
-        const text = document.getElementById("pr-comment").value.trim();
-        if (!text) return;
-        const r = await fetch(`${api}/api/github/pr-comment`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ owner, repo, prNumber, text })
-        });
-        if (!r.ok) return alert("Failed to post");
-        document.getElementById("pr-comment").value = "";
-        load();
-      };
-
-      document.getElementById("sign-in").onclick = gotoLogin;
-      document.getElementById("sign-out").onclick = logout;
+      threadsRoot.innerHTML = blocks.join("") || `<div class="thread" style="border:none;margin:0;padding:0;color:#777;">
+        No discussion yet.
+      </div>`;
     }
 
-    function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]))}
-
-    load();
+    render();
   })();
 </script>
+
 
 <style>
   .card{border:1px solid var(--border,#e5e7eb); border-radius:12px; padding:12px; background:#fff}
