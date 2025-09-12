@@ -4,15 +4,17 @@ epic: MXOP-0030
 family: intorduced in app purchase
 version: v1
 title: intorduced in app purchase
-status: in-progress
+status: active
 stage: dev
-spec_version: "1.0.0"
+spec_version: "1.0.1"
 owner: "@pranavwani"
 team: ""
 created_at: 2025-09-11
-updated_at:
+updated_at: "2025-09-12"
 tags: []
 changelog:
+  - date: "2025-09-12"
+    text: 'Merged PR #60: [Spec] intorduced in app purchase (scaffold)'
   - date: 2025-09-11
     text: "Initial scaffold from issue #59"
 nav_title: "Overview"
